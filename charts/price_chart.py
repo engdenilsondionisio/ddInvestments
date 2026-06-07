@@ -14,6 +14,7 @@ def build_price_chart(df: pd.DataFrame, show: dict | None = None) -> go.Figure:
     s_log      = show.get("log_bands", True)
     s_bull     = show.get("bull_band", True)
     s_bb       = show.get("bollinger", False)
+    s_2yma     = show.get("ma2y", False)
 
     dates = df.index
     fig = go.Figure()
