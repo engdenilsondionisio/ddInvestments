@@ -1,37 +1,25 @@
 import requests
 import pandas as pd
 import streamlit as st
+import yfinance as yf
 
 
 @st.cache_data(ttl=300)
 def fetch_btc_history() -> pd.DataFrame:
-    """Fetch BTC daily close prices from Binance (paginated, no API key required)."""
-    url = "https://api.binance.com/api/v3/klines"
-    all_candles: list = []
-    start_time = 1483228800000  # 2017-01-01 00:00:00 UTC in ms
-
+    """Fetch BTC daily close prices from Yahoo Finance via yfinance (no API key required)."""
     try:
-        while True:
-            params = {
-                "symbol": "BTCUSDT",
-                "interval": "1d",
-                "startTime": start_time,
-                "limit": 1000,
-            }
-            resp = requests.get(url, params=params, timeout=15)
-            resp.raise_for_status()
-            candles = resp.json()
-            if not candles:
-                break
-            all_candles.extend(candles)
-            if len(candles) < 1000:
-                break
-            start_time = int(candles[-1][0]) + 86_400_000  # advance one day
-
-        df = pd.DataFrame(all_candles)
-        df["date"] = pd.to_datetime(df[0].astype(int), unit="ms").dt.normalize()
-        df["close"] = df[4].astype(float)
-        df = df.set_index("date")[["close"]]
+        df = yf.download("BTC-USD", period="max", interval="1d", progress=False, auto_adjust=True)
+        if df.empty:
+            raise ValueError("Nenhum dado retornado pelo Yahoo Finance.")
+        # yfinance >=0.2 may return MultiIndex columns
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        df = df[["Close"]].rename(columns={"Close": "close"})
+        df.index = pd.to_datetime(df.index)
+        if df.index.tz is not None:
+            df.index = df.index.tz_localize(None)
+        df.index = df.index.normalize()
+        df.index.name = "date"
         df = df[~df.index.duplicated(keep="last")].sort_index()
         df = df[df["close"] > 0]
         return df
