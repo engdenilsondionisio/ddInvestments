@@ -5,53 +5,38 @@ import streamlit as st
 
 @st.cache_data(ttl=300)
 def fetch_btc_history() -> pd.DataFrame:
-    """Fetch full BTC daily close price history from CoinGecko."""
-    url = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart"
-    params = {"vs_currency": "usd", "days": "max", "interval": "daily"}
+    """Fetch BTC daily close prices from Binance (paginated, no API key required)."""
+    url = "https://api.binance.com/api/v3/klines"
+    all_candles: list = []
+    start_time = 1483228800000  # 2017-01-01 00:00:00 UTC in ms
+
     try:
-        resp = requests.get(url, params=params, timeout=20)
-        resp.raise_for_status()
-        data = resp.json()
-        prices = data.get("prices", [])
-        df = pd.DataFrame(prices, columns=["timestamp_ms", "close"])
-        df["date"] = pd.to_datetime(df["timestamp_ms"], unit="ms").dt.normalize()
-        df = df.set_index("date").drop(columns=["timestamp_ms"])
+        while True:
+            params = {
+                "symbol": "BTCUSDT",
+                "interval": "1d",
+                "startTime": start_time,
+                "limit": 1000,
+            }
+            resp = requests.get(url, params=params, timeout=15)
+            resp.raise_for_status()
+            candles = resp.json()
+            if not candles:
+                break
+            all_candles.extend(candles)
+            if len(candles) < 1000:
+                break
+            start_time = int(candles[-1][0]) + 86_400_000  # advance one day
+
+        df = pd.DataFrame(all_candles)
+        df["date"] = pd.to_datetime(df[0].astype(int), unit="ms").dt.normalize()
+        df["close"] = df[4].astype(float)
+        df = df.set_index("date")[["close"]]
         df = df[~df.index.duplicated(keep="last")].sort_index()
         df = df[df["close"] > 0]
         return df
     except Exception as e:
         st.error(f"Erro ao buscar preço BTC: {e}")
-        return pd.DataFrame()
-
-
-@st.cache_data(ttl=3600)
-def fetch_mvrv_data() -> pd.DataFrame:
-    """Fetch Market Cap and Realized Cap from CoinMetrics Community API to compute MVRV."""
-    url = "https://community-api.coinmetrics.io/v4/timeseries/asset-metrics"
-    params = {
-        "assets": "btc",
-        "metrics": "CapMrktCurUSD,CapRealUSD",
-        "frequency": "1d",
-        "start_time": "2010-01-01",
-        "page_size": "10000",
-    }
-    try:
-        resp = requests.get(url, params=params, timeout=30)
-        resp.raise_for_status()
-        rows = resp.json().get("data", [])
-        df = pd.DataFrame(rows)
-        if df.empty:
-            return pd.DataFrame()
-        df["date"] = pd.to_datetime(df["time"]).dt.normalize()
-        df = df.set_index("date")
-        df["CapMrktCurUSD"] = pd.to_numeric(df["CapMrktCurUSD"], errors="coerce")
-        df["CapRealUSD"] = pd.to_numeric(df["CapRealUSD"], errors="coerce")
-        df = df.dropna(subset=["CapMrktCurUSD", "CapRealUSD"])
-        df = df[df["CapRealUSD"] > 0]
-        df["mvrv"] = df["CapMrktCurUSD"] / df["CapRealUSD"]
-        return df[["mvrv"]].sort_index()
-    except Exception as e:
-        st.error(f"Erro ao buscar MVRV: {e}")
         return pd.DataFrame()
 
 

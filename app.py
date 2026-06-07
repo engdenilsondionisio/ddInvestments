@@ -2,7 +2,7 @@ import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 import datetime
 
-from data.fetcher import fetch_btc_history, fetch_mvrv_data, fetch_fear_greed
+from data.fetcher import fetch_btc_history, fetch_fear_greed
 from indicators.log_regression import enrich_dataframe
 from indicators.signals import generate_signal
 from charts.price_chart import build_price_chart
@@ -57,9 +57,8 @@ st.markdown(f"<h1>₿ Bitcoin Dashboard &nbsp; <span style='font-size:0.8rem;col
 
 # ── Load data ────────────────────────────────────────────────────────────────
 with st.spinner("Carregando dados..."):
-    btc_df   = fetch_btc_history()
-    mvrv_df  = fetch_mvrv_data()
-    fg_data  = fetch_fear_greed()
+    btc_df  = fetch_btc_history()
+    fg_data = fetch_fear_greed()
 
 if btc_df.empty:
     st.error("Não foi possível carregar os dados de preço do Bitcoin.")
@@ -71,7 +70,7 @@ btc_df = enrich_dataframe(btc_df)
 current_price  = float(btc_df["close"].iloc[-1])
 current_sma200 = float(btc_df["sma200"].iloc[-1])
 current_mri    = float(btc_df["mri"].dropna().iloc[-1]) if not btc_df["mri"].dropna().empty else 0.0
-current_mvrv   = float(mvrv_df["mvrv"].iloc[-1]) if not mvrv_df.empty else 2.0
+current_mvrv   = float(btc_df["mvrv"].dropna().iloc[-1]) if not btc_df["mvrv"].dropna().empty else 2.0
 current_fg     = fg_data["value"]
 
 signal = generate_signal(current_mri, current_mvrv, current_fg, current_price, current_sma200)
@@ -123,10 +122,7 @@ col_mri, col_mvrv = st.columns(2)
 with col_mri:
     st.plotly_chart(build_mri_chart(btc_df), use_container_width=True)
 with col_mvrv:
-    if not mvrv_df.empty:
-        st.plotly_chart(build_mvrv_chart(mvrv_df), use_container_width=True)
-    else:
-        st.info("Dados de MVRV indisponíveis no momento.")
+    st.plotly_chart(build_mvrv_chart(btc_df), use_container_width=True)
 
 # ── Row: Fear & Greed gauge + history + score breakdown ──────────────────────
 col_gauge, col_fghist, col_breakdown = st.columns([1, 1.6, 1.4])

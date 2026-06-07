@@ -5,7 +5,7 @@ from charts._theme import BASE_LAYOUT, COLORS
 
 
 def build_mvrv_chart(df: pd.DataFrame) -> go.Figure:
-    """MVRV ratio chart with historical reference zones."""
+    """MVRV approximation chart (realized price proxy = 2-year EWM of close)."""
     df = df.dropna(subset=["mvrv"])
     dates = df.index
     mvrv = df["mvrv"]
@@ -43,7 +43,7 @@ def build_mvrv_chart(df: pd.DataFrame) -> go.Figure:
 
     layout = BASE_LAYOUT.copy()
     layout.update(dict(
-        title=dict(text="MVRV — Market Value to Realized Value", font=dict(size=14)),
+        title=dict(text="MVRV — Market Value / Realized Value (aprox.)", font=dict(size=14)),
         yaxis=dict(title="MVRV Ratio", zeroline=False, gridcolor=COLORS["grid"]),
         xaxis=dict(title="", gridcolor=COLORS["grid"]),
         hovermode="x unified",

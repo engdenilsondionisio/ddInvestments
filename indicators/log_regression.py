@@ -36,4 +36,10 @@ def enrich_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     rolling_std = residuals_series.rolling(window=365, min_periods=180).std()
     df["mri"] = residuals_series / rolling_std
 
+    # MVRV approximation: price / realized_price_proxy
+    # Realized price proxy = EWM of close prices (span=730 ≈ 2-year half-life)
+    # Correlates well with actual realized price without requiring on-chain data
+    realized_price = df["close"].ewm(span=730, min_periods=365).mean()
+    df["mvrv"] = df["close"] / realized_price
+
     return df
