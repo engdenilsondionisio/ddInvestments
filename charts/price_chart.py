@@ -103,6 +103,21 @@ def build_price_chart(df: pd.DataFrame, show: dict | None = None) -> go.Figure:
             name="SMA 50",
         ))
 
+    # ── 2-Year MA Multiplier ──────────────────────────────────────────────────
+    if s_2yma:
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["ma2y_x5"],
+            mode="lines",
+            line=dict(color="rgba(255,80,80,0.85)", width=1.4),
+            name="2Y MA ×5",
+        ))
+        fig.add_trace(go.Scatter(
+            x=dates, y=df["ma2y"],
+            mode="lines",
+            line=dict(color="rgba(80,200,255,0.85)", width=1.4),
+            name="2Y MA",
+        ))
+
     # ── BTC Price (sempre visível, camada de cima) ────────────────────────────
     fig.add_trace(go.Scatter(
         x=dates, y=df["close"],
