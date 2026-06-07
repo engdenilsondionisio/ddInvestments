@@ -36,6 +36,17 @@ def enrich_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     rolling_std = residuals_series.rolling(window=365, min_periods=180).std()
     df["mri"] = residuals_series / rolling_std
 
+    # Bollinger Bands (20-day, ±2σ)
+    bb_sma = df["close"].rolling(20, min_periods=1).mean()
+    bb_std = df["close"].rolling(20, min_periods=1).std().fillna(0)
+    df["bb_upper"] = bb_sma + 2.0 * bb_std
+    df["bb_mid"]   = bb_sma
+    df["bb_lower"] = bb_sma - 2.0 * bb_std
+
+    # Bull Market Support Band (Benjamin Cowen)
+    df["bull_sma20w"] = df["close"].rolling(140, min_periods=1).mean()   # 20-week SMA
+    df["bull_ema21w"] = df["close"].ewm(span=147, adjust=False).mean()    # 21-week EMA
+
     # MVRV approximation: price / realized_price_proxy
     # Realized price proxy = EWM of close prices (span=730 ≈ 2-year half-life)
     # Correlates well with actual realized price without requiring on-chain data

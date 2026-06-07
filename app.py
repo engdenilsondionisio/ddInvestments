@@ -114,8 +114,19 @@ for label, value, col in metrics:
 
 st.markdown("<br>", unsafe_allow_html=True)
 
+# ── Chart 1: toggles ─────────────────────────────────────────────────────────
+st.markdown("<span style='font-size:0.78rem;color:#8B949E;text-transform:uppercase;letter-spacing:0.06em'>Gráfico Principal — Indicadores</span>", unsafe_allow_html=True)
+t1, t2, t3, t4, t5 = st.columns(5)
+show = {
+    "sma50":     t1.toggle("SMA 50",            value=True,  key="tog_sma50"),
+    "sma200":    t2.toggle("SMA 200",           value=True,  key="tog_sma200"),
+    "log_bands": t3.toggle("Log Bands",         value=True,  key="tog_log"),
+    "bull_band": t4.toggle("Bull Market Band",  value=True,  key="tog_bull"),
+    "bollinger": t5.toggle("Bollinger Bands",   value=False, key="tog_bb"),
+}
+
 # ── Chart 1: Price + Bands ────────────────────────────────────────────────────
-st.plotly_chart(build_price_chart(btc_df), use_container_width=True)
+st.plotly_chart(build_price_chart(btc_df, show), use_container_width=True)
 
 # ── Charts 2 & 3: MRI and MVRV ───────────────────────────────────────────────
 col_mri, col_mvrv = st.columns(2)
