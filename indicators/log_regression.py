@@ -47,6 +47,10 @@ def enrich_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     df["bull_sma20w"] = df["close"].rolling(140, min_periods=1).mean()   # 20-week SMA
     df["bull_ema21w"] = df["close"].ewm(span=147, adjust=False).mean()    # 21-week EMA
 
+    # 2-Year MA Multiplier
+    df["ma2y"]    = df["close"].rolling(730, min_periods=365).mean()
+    df["ma2y_x5"] = df["ma2y"] * 5
+
     # MVRV approximation: price / realized_price_proxy
     # Realized price proxy = EWM of close prices (span=730 ≈ 2-year half-life)
     # Correlates well with actual realized price without requiring on-chain data
