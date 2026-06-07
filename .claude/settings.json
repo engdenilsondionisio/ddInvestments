@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "Set-Location 'C:\\Users\\denil\\OneDrive\\Documentos\\ddInvestments'; $s = git status --porcelain; if ($s) { git add -A; git commit -m \"Auto: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')\"; git push origin } 2>$null",
+            "timeout": 30,
+            "statusMessage": "Sincronizando com GitHub...",
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}
